@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 enum CandleAlignment {
+  top,
   center,
   bottom,
 }
@@ -36,7 +37,7 @@ class TimelineRenderOptions {
     this.candleAlignment = CandleAlignment.center,
     this.candleWidth = 10, // Pixels
     this.candleColor = Colors.black, // Color
-    this.smallCandleSizeFactor = 0.75, // 75% off height
+    this.smallCandleSizeFactor = 2 / 3, // 66% off height
     this.minCandleGap = 20, // Pixels
     this.candleGroups = defaultCandleGroups,
   });

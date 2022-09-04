@@ -1,6 +1,6 @@
+import 'package:example/state_visualizer.dart';
 import 'package:flutter/material.dart';
 import 'package:interactive_timeline/interactive_timeline.dart';
-import 'play_button.dart';
 
 void main() {
   runApp(const MyApp());
@@ -32,7 +32,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  TimelineCubit timelineCubit = TimelineCubit();
+  InteractiveTimelineCubit timelineCubit = InteractiveTimelineCubit();
 
   @override
   Widget build(BuildContext context) {
@@ -44,11 +44,13 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            PlayButton(timelineCubit: timelineCubit),
+            StateVisualizer(cubit: timelineCubit),
             InteractiveTimeline(
               width: MediaQuery.of(context).size.width,
               height: 100,
               cubit: timelineCubit,
+              color: Color.fromARGB(255, 201, 201, 201),
+              padding: EdgeInsets.all(10),
             )
           ],
         ),

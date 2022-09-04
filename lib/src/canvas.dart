@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:interactive_timeline/interactive_timeline.dart';
 
 class TimelinePainter extends CustomPainter {
-  TimelineState state;
+  InteractiveTimelineState state;
   TimelineRenderOptions renderOptions;
 
   TimelinePainter({
@@ -40,20 +40,33 @@ class TimelinePainter extends CustomPainter {
   }
 
   void paintCandle(Canvas canvas, Size size, double x, Paint paint, double heightRatio, CandleAlignment candleAlignment) {
-    if (candleAlignment == CandleAlignment.bottom) {
-      // bottom aligned candle
-      canvas.drawLine(
-        Offset(x, size.height),
-        Offset(x, size.height - heightRatio * size.height),
-        paint,
-      );
-    } else {
-      // center aligned candle
-      canvas.drawLine(
-        Offset(x, state.height / 2 + heightRatio * state.height / 2),
-        Offset(x, state.height / 2 - heightRatio * state.height / 2),
-        paint,
-      );
+    double candleLength = heightRatio * (size.height);
+    double candleLineLength = candleLength - renderOptions.candleWidth;
+    double halfCandleWidth = renderOptions.candleWidth / 2;
+    double halfHeight = size.height / 2;
+
+    switch (candleAlignment) {
+      case CandleAlignment.top:
+        canvas.drawLine(
+          Offset(x, -halfCandleWidth),
+          Offset(x, candleLineLength - halfCandleWidth),
+          paint,
+        );
+        break;
+      case CandleAlignment.center:
+        canvas.drawLine(
+          Offset(x, halfHeight - (candleLineLength / 2)),
+          Offset(x, halfHeight + (candleLineLength / 2)),
+          paint,
+        );
+        break;
+      case CandleAlignment.bottom:
+        canvas.drawLine(
+          Offset(x, size.height - halfCandleWidth),
+          Offset(x, size.height - candleLineLength - halfCandleWidth),
+          paint,
+        );
+        break;
     }
   }
 
