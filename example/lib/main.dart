@@ -1,4 +1,3 @@
-import 'package:example/state_visualizer.dart';
 import 'package:flutter/material.dart';
 import 'package:interactive_timeline/interactive_timeline.dart';
 
@@ -32,10 +31,23 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  InteractiveTimelineCubit timelineCubit = InteractiveTimelineCubit(
-    minCursor: DateTime.now().subtract(Duration(hours: 1)),
-    maxCursor: DateTime.now().add(Duration(hours: 1)),
-  );
+  InteractiveTimelineCubit timelineCubit = InteractiveTimelineCubit();
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    // after build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      timelineCubit.setMinMax(
+        minCursor: DateTime.now().subtract(Duration(hours: 1)),
+        maxCursor: DateTime.now().add(Duration(hours: 1)),
+      );
+      timelineCubit.setCursor(
+        DateTime.now().subtract(Duration(minutes: 30)),
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +59,7 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            StateVisualizer(cubit: timelineCubit),
+            InteractiveTimelineDebug(cubit: timelineCubit),
             InteractiveTimeline(
               width: MediaQuery.of(context).size.width,
               height: 100,

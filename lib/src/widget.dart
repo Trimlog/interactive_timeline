@@ -10,6 +10,8 @@ class InteractiveTimeline extends StatefulWidget {
   TimelineRenderOptions renderOptions;
   EdgeInsets padding;
   Color color;
+  DateTime? minCursor;
+  DateTime? maxCursor;
   InteractiveTimeline({
     Key? key,
     required this.width,
@@ -18,6 +20,8 @@ class InteractiveTimeline extends StatefulWidget {
     this.renderOptions = const TimelineRenderOptions(),
     this.padding = const EdgeInsets.all(0),
     this.color = Colors.transparent,
+    this.minCursor,
+    this.maxCursor,
   }) : super(key: key);
 
   @override
@@ -27,7 +31,7 @@ class InteractiveTimeline extends StatefulWidget {
 class _InteractiveTimelineState extends State<InteractiveTimeline> {
   @override
   void initState() {
-    widget.cubit.initialize(widget.width, widget.height);
+    widget.cubit.initialize(widget.width, widget.height, widget.minCursor, widget.maxCursor);
     super.initState();
   }
 

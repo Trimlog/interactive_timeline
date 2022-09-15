@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:interactive_timeline/src/utils.dart' as utils;
 
 // timeline cubit
 class InteractiveTimelineCubit extends Cubit<InteractiveTimelineState> {
@@ -23,11 +24,7 @@ class InteractiveTimelineCubit extends Cubit<InteractiveTimelineState> {
     minCursor,
     maxCursor,
   }) : super(
-          InteractiveTimelineState.initializeAtTime(
-            initialTime ?? DateTime.now(),
-            minCursor,
-            maxCursor,
-          ),
+          InteractiveTimelineState.initializeAtTime(initialTime ?? DateTime.now()),
         );
 
   double _restrictZoomLevel(double secondsPerScreenWidth) {
@@ -104,8 +101,21 @@ class InteractiveTimelineCubit extends Cubit<InteractiveTimelineState> {
     }
   }
 
-  // TODO: Using null won't clear the variables
-  void setMinMax({DateTime? min, DateTime? max}) => emit(state.overwrite(minCursor: min, maxCursor: max));
+  void setMinMax({DateTime? minCursor, DateTime? maxCursor}) {
+    var newState = state.setMinMaxCursor(minCursor: minCursor, maxCursor: maxCursor);
+    newState = newState.overwrite(
+      middleCursor: newState.cropMinMaxCursor(newState.middleCursor),
+    );
+    emit(newState);
+  }
+
+  void setCursor(DateTime cursor) {
+    emit(
+      state.overwrite(
+        middleCursor: state.cropMinMaxCursor(cursor),
+      ),
+    );
+  }
 
   void _tickTimer(Duration duration) {
     if (!state.isInteracting) {
@@ -123,12 +133,14 @@ class InteractiveTimelineCubit extends Cubit<InteractiveTimelineState> {
     }
   }
 
-  void initialize(double width, double height) {
+  void initialize(double width, double height, [DateTime? minCursor, DateTime? maxCursor]) {
     emit(state.overwrite(
       secondsPerScreenWidth: initialZoomLevel, // default zoom level
       middleCursor: initialTime,
       width: width,
       height: height,
+      minCursor: minCursor,
+      maxCursor: maxCursor,
     ));
   }
 }
@@ -167,23 +179,35 @@ class InteractiveTimelineState extends Equatable {
   @override
   List<Object> get props => [width, height, secondsPerPixel, secondsPerScreenWidth, secondsPerScreenWidthBeforeZoom, middleCursor, leftCursor, rightCursor, isPlaying, isInteracting];
 
-  static InteractiveTimelineState initializeAtTime(DateTime time, DateTime? minCursor, DateTime? maxCursor) {
+  static InteractiveTimelineState initializeAtTime(DateTime time) {
     return InteractiveTimelineState(
-      width: 0,
-      height: 0,
-      secondsPerPixel: 0,
-      secondsPerScreenWidth: 0,
-      secondsPerScreenWidthBeforeZoom: 0,
+      width: 1,
+      height: 1,
+      secondsPerPixel: 1,
+      secondsPerScreenWidth: 1,
+      secondsPerScreenWidthBeforeZoom: 1,
       middleCursor: time,
       leftCursor: time,
       rightCursor: time,
-      minCursor: minCursor,
-      maxCursor: maxCursor,
+      minCursor: null,
+      maxCursor: null,
       playTimer: null,
       isPlaying: false,
       isInteracting: false,
     );
   }
+
+  bool insideMinMaxCursor(DateTime cursor, [DateTime? minCursor, DateTime? maxCursor]) => utils.insideMinMaxCursor(
+        cursor,
+        minCursor ?? this.minCursor,
+        maxCursor ?? this.maxCursor,
+      );
+
+  DateTime cropMinMaxCursor(DateTime cursor, [DateTime? minCursor, DateTime? maxCursor]) => utils.cropMinMaxCursor(
+        cursor,
+        minCursor ?? this.minCursor,
+        maxCursor ?? this.maxCursor,
+      );
 
   DateTime getLeftCursor(double width, double secondsPerPixel) {
     return middleCursor.subtract(
@@ -197,10 +221,23 @@ class InteractiveTimelineState extends Equatable {
     );
   }
 
-  bool insideMinMaxCursor(DateTime time) {
-    if (minCursor != null) if (time.isBefore(minCursor!)) return false;
-    if (maxCursor != null) if (time.isAfter(maxCursor!)) return false;
-    return true;
+  // minCursor and maxCursor should be changable to null (.overwrite would fall back when passed null)
+  InteractiveTimelineState setMinMaxCursor({DateTime? minCursor, DateTime? maxCursor}) {
+    return InteractiveTimelineState(
+      width: width,
+      height: height,
+      secondsPerPixel: secondsPerPixel,
+      secondsPerScreenWidth: secondsPerScreenWidth,
+      secondsPerScreenWidthBeforeZoom: secondsPerScreenWidthBeforeZoom,
+      middleCursor: middleCursor,
+      leftCursor: leftCursor,
+      rightCursor: rightCursor,
+      minCursor: minCursor,
+      maxCursor: maxCursor,
+      playTimer: playTimer,
+      isPlaying: isPlaying,
+      isInteracting: isInteracting,
+    );
   }
 
   InteractiveTimelineState overwrite({

@@ -42,3 +42,15 @@ class TimelineRenderOptions {
     this.candleGroups = defaultCandleGroups,
   });
 }
+
+bool insideMinMaxCursor(DateTime time, DateTime? minCursor, DateTime? maxCursor) {
+  if (minCursor != null) if (time.isBefore(minCursor)) return false;
+  if (maxCursor != null) if (time.isAfter(maxCursor)) return false;
+  return true;
+}
+
+DateTime cropMinMaxCursor(DateTime cursor, DateTime? minCursor, DateTime? maxCursor) {
+  if (minCursor != null) if (cursor.isBefore(minCursor)) return minCursor;
+  if (maxCursor != null) if (cursor.isAfter(maxCursor)) return maxCursor;
+  return cursor;
+}

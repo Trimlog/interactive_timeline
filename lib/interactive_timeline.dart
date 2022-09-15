@@ -6,3 +6,4 @@ library interactive_timeline;
 export 'src/cubit.dart';
 export 'src/widget.dart';
 export 'src/utils.dart';
+export 'src/debug.dart';
