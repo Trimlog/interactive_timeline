@@ -32,7 +32,10 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  InteractiveTimelineCubit timelineCubit = InteractiveTimelineCubit();
+  InteractiveTimelineCubit timelineCubit = InteractiveTimelineCubit(
+    minCursor: DateTime.now().subtract(Duration(hours: 1)),
+    maxCursor: DateTime.now().add(Duration(hours: 1)),
+  );
 
   @override
   Widget build(BuildContext context) {

@@ -12,15 +12,21 @@ class InteractiveTimelineCubit extends Cubit<InteractiveTimelineState> {
   Duration timerUpdateInterval; // Milliseconds
   double initialZoomLevel; // Seconds per screen width
   DateTime? initialTime;
+  DateTime? minCursor;
+  DateTime? maxCursor;
   InteractiveTimelineCubit({
     this.minSecondsPerScreenWidth = 10,
     this.maxSecondsPerScreenWidth = 10000,
     this.timerUpdateInterval = const Duration(milliseconds: 25),
     this.initialZoomLevel = 500,
     this.initialTime,
+    minCursor,
+    maxCursor,
   }) : super(
           InteractiveTimelineState.initializeAtTime(
             initialTime ?? DateTime.now(),
+            minCursor,
+            maxCursor,
           ),
         );
 
@@ -40,12 +46,13 @@ class InteractiveTimelineCubit extends Cubit<InteractiveTimelineState> {
 
   void dragHorizontally(DragUpdateDetails update) {
     num offsetSeconds = update.primaryDelta! * state.secondsPerPixel;
-    emit(state.overwrite(
-      middleCursor: state.middleCursor.subtract(
-        Duration(milliseconds: (offsetSeconds * 1000).toInt()),
-      ),
-      isInteracting: true,
-    ));
+    DateTime newCursor = state.middleCursor.subtract(Duration(milliseconds: (offsetSeconds * 1000).toInt()));
+    state.insideMinMaxCursor(newCursor)
+        ? emit(state.overwrite(
+            middleCursor: newCursor,
+            isInteracting: true,
+          ))
+        : {};
   }
 
   void zoomStart(ScaleStartDetails details) {
@@ -97,14 +104,22 @@ class InteractiveTimelineCubit extends Cubit<InteractiveTimelineState> {
     }
   }
 
+  // TODO: Using null won't clear the variables
+  void setMinMax({DateTime? min, DateTime? max}) => emit(state.overwrite(minCursor: min, maxCursor: max));
+
   void _tickTimer(Duration duration) {
     if (!state.isInteracting) {
       double timerMilliesecondsPerScreenWidth = 10 * 1000; // timer scroll speed
       double deltaScreenWidth = duration.inMilliseconds / timerMilliesecondsPerScreenWidth;
       Duration deltaCursor = Duration(milliseconds: (deltaScreenWidth * state.secondsPerScreenWidth * 1000).toInt());
-      emit(state.overwrite(
-        middleCursor: state.middleCursor.add(deltaCursor),
-      ));
+      DateTime newCursor = state.middleCursor.add(deltaCursor);
+      state.insideMinMaxCursor(newCursor)
+          ? emit(
+              state.overwrite(
+                middleCursor: newCursor,
+              ),
+            )
+          : stopTimer();
     }
   }
 
@@ -128,6 +143,8 @@ class InteractiveTimelineState extends Equatable {
     required this.middleCursor,
     required this.leftCursor,
     required this.rightCursor,
+    required this.minCursor,
+    required this.maxCursor,
     required this.playTimer,
     required this.isPlaying,
     required this.isInteracting,
@@ -141,6 +158,8 @@ class InteractiveTimelineState extends Equatable {
   final DateTime middleCursor;
   final DateTime leftCursor;
   final DateTime rightCursor;
+  final DateTime? minCursor;
+  final DateTime? maxCursor;
   final Timer? playTimer;
   final bool isPlaying;
   final bool isInteracting;
@@ -148,7 +167,7 @@ class InteractiveTimelineState extends Equatable {
   @override
   List<Object> get props => [width, height, secondsPerPixel, secondsPerScreenWidth, secondsPerScreenWidthBeforeZoom, middleCursor, leftCursor, rightCursor, isPlaying, isInteracting];
 
-  static InteractiveTimelineState initializeAtTime(DateTime time) {
+  static InteractiveTimelineState initializeAtTime(DateTime time, DateTime? minCursor, DateTime? maxCursor) {
     return InteractiveTimelineState(
       width: 0,
       height: 0,
@@ -158,6 +177,8 @@ class InteractiveTimelineState extends Equatable {
       middleCursor: time,
       leftCursor: time,
       rightCursor: time,
+      minCursor: minCursor,
+      maxCursor: maxCursor,
       playTimer: null,
       isPlaying: false,
       isInteracting: false,
@@ -176,12 +197,20 @@ class InteractiveTimelineState extends Equatable {
     );
   }
 
+  bool insideMinMaxCursor(DateTime time) {
+    if (minCursor != null) if (time.isBefore(minCursor!)) return false;
+    if (maxCursor != null) if (time.isAfter(maxCursor!)) return false;
+    return true;
+  }
+
   InteractiveTimelineState overwrite({
     double? width,
     double? height,
     double? secondsPerScreenWidth,
     double? secondsPerScreenWidthBeforeZoom,
     DateTime? middleCursor,
+    DateTime? minCursor,
+    DateTime? maxCursor,
     Timer? playTimer,
     bool? isPlaying,
     bool? isInteracting,
@@ -198,6 +227,8 @@ class InteractiveTimelineState extends Equatable {
       middleCursor: middleCursor ?? this.middleCursor,
       leftCursor: getLeftCursor(width ?? this.width, newSecondsPerPixel),
       rightCursor: getRightCursor(width ?? this.width, newSecondsPerPixel),
+      minCursor: minCursor ?? this.minCursor,
+      maxCursor: maxCursor ?? this.maxCursor,
       playTimer: playTimer ?? this.playTimer,
       isPlaying: isPlaying ?? this.isPlaying,
       isInteracting: isInteracting ?? this.isInteracting,
@@ -206,9 +237,9 @@ class InteractiveTimelineState extends Equatable {
 }
 
 class InteractiveTimelineBlocBuilder extends StatelessWidget {
-  InteractiveTimelineCubit bloc;
-  Widget Function(BuildContext, InteractiveTimelineState) builder;
-  InteractiveTimelineBlocBuilder({
+  final InteractiveTimelineCubit bloc;
+  final Widget Function(BuildContext, InteractiveTimelineState) builder;
+  const InteractiveTimelineBlocBuilder({
     Key? key,
     required this.bloc,
     required this.builder,

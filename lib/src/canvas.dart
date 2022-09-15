@@ -74,13 +74,16 @@ class TimelinePainter extends CustomPainter {
     getCandlesInFrame(interval).forEach((x) => paintCandle(canvas, size, x, paint, heightRatio, candleAlignment));
   }
 
-  List<double> getCandlesInFrame(Duration interval) {
+  List<double> getCandlesInFrame(Duration interval, [DateTime? min, DateTime? max]) {
     // last full minute before cursorLeft
     Duration offset = Duration(milliseconds: state.leftCursor.millisecondsSinceEpoch % interval.inMilliseconds);
     DateTime startTime = state.leftCursor.subtract(offset);
     List<double> minuteCandles = [];
     while (startTime.isBefore(state.rightCursor.add(interval))) {
-      minuteCandles.add(timeToPixel(startTime));
+      // hie candles out of min max
+      if (state.insideMinMaxCursor(startTime)) {
+        minuteCandles.add(timeToPixel(startTime));
+      }
       startTime = startTime.add(interval);
     }
     return minuteCandles;
