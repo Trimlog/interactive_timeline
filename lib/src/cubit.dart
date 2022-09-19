@@ -101,10 +101,11 @@ class InteractiveTimelineCubit extends Cubit<InteractiveTimelineState> {
     }
   }
 
-  void setMinMax({DateTime? minCursor, DateTime? maxCursor}) {
+  void setMinMax({DateTime? minCursor, DateTime? maxCursor, DateTime? middleCursor}) {
     var newState = state.setMinMaxCursor(minCursor: minCursor, maxCursor: maxCursor);
     newState = newState.overwrite(
-      middleCursor: newState.cropMinMaxCursor(newState.middleCursor),
+      // middleCursor is optional to use custom middleCursor to crop
+      middleCursor: newState.cropMinMaxCursor(middleCursor ?? newState.middleCursor),
     );
     emit(newState);
   }
@@ -209,13 +210,13 @@ class InteractiveTimelineState extends Equatable {
         maxCursor ?? this.maxCursor,
       );
 
-  DateTime getLeftCursor(double width, double secondsPerPixel) {
+  DateTime _calculateLeftCursor(double width, double secondsPerPixel, DateTime middleCursor) {
     return middleCursor.subtract(
       Duration(milliseconds: ((width / 2) * secondsPerPixel * 1000).toInt()),
     );
   }
 
-  DateTime getRightCursor(double width, double secondsPerPixel) {
+  DateTime _calculateRightCursor(double width, double secondsPerPixel, DateTime middleCursor) {
     return middleCursor.add(
       Duration(milliseconds: ((width / 2) * secondsPerPixel * 1000).toInt()),
     );
@@ -255,6 +256,7 @@ class InteractiveTimelineState extends Equatable {
     double newSecondsPerScreenWidth = secondsPerScreenWidth ?? this.secondsPerScreenWidth;
     double newWidth = width ?? this.width;
     double newSecondsPerPixel = newSecondsPerScreenWidth / newWidth;
+    DateTime newMiddleCursor = middleCursor ?? this.middleCursor;
     return InteractiveTimelineState(
       width: newWidth,
       height: height ?? this.height,
@@ -262,8 +264,8 @@ class InteractiveTimelineState extends Equatable {
       secondsPerScreenWidth: newSecondsPerScreenWidth,
       secondsPerScreenWidthBeforeZoom: secondsPerScreenWidthBeforeZoom ?? this.secondsPerScreenWidthBeforeZoom,
       middleCursor: middleCursor ?? this.middleCursor,
-      leftCursor: getLeftCursor(width ?? this.width, newSecondsPerPixel),
-      rightCursor: getRightCursor(width ?? this.width, newSecondsPerPixel),
+      leftCursor: _calculateLeftCursor(newWidth, newSecondsPerPixel, newMiddleCursor),
+      rightCursor: _calculateRightCursor(newWidth, newSecondsPerPixel, newMiddleCursor),
       minCursor: minCursor ?? this.minCursor,
       maxCursor: maxCursor ?? this.maxCursor,
       playTimer: playTimer ?? this.playTimer,
